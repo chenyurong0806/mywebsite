@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的下载站</title>
+  <style>
+    /* 全局样式 */
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      background-color: #fffaf0;
+      color: #333;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* 顶部导航 */
+    header {
+      background-color: #ff6600; /* 橙色主色调 */
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    nav a {
+      margin-left: 1rem;
+      font-weight: bold;
+      transition: opacity 0.2s;
+    }
+
+    nav a:hover {
+      opacity: 0.8;
+    }
+
+    /* 主体内容 */
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    h2 {
+      color: #ff6600;
+      margin-bottom: 1rem;
+    }
+
+    ul.download-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul.download-list li {
+      background-color: #fff3e0;
+      margin-bottom: 1rem;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    ul.download-list li:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    ul.download-list a.download-btn {
+      background-color: #ff6600;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+
+    ul.download-list a.download-btn:hover {
+      background-color: #e55b00;
+    }
+
+    /* 底部 */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #999;
+      font-size: 0.9rem;
+      border-top: 1px solid #eee;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 顶部导航 -->
+  <header>
+    <h1>我的下载站</h1>
+    <nav>
+      <a href="#">首页</a>
+      <a href="#">关于</a>
+      <a href="#">联系我们</a>
+    </nav>
+  </header>
+
+  <!-- 主体内容 -->
+  <main>
+    <h2>可下载文件</h2>
+    <ul class="download-list">
+      <li>
+        <span>示例文件1.zip</span>
+        <a href="files/file1.zip" class="download-btn" download>下载</a>
+      </li>
+      <li>
+        <span>示例文件2.pdf</span>
+        <a href="files/file2.pdf" class="download-btn" download>下载</a>
+      </li>
+      <li>
+        <span>示例文件3.mp4</span>
+        <a href="files/file3.mp4" class="download-btn" download>下载</a>
+      </li>
+    </ul>
+  </main>
+
+  <!-- 底部信息 -->
+  <footer>
+    &copy; 2026 我的下载站 | 版权所有
+  </footer>
+
+</body>
+</html>
