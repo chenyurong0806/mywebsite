@@ -1,3 +1,4 @@
 [
-  {"name": "test.txt", "path": "files/test.txt"}
+  {"name": "test.txt", "path": "files/test.txt"},
+  {"name": "地理必修 第二册.pdf", "path": "files/地理必修 第二册.pdf"}
 ]
