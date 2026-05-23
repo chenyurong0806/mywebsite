@@ -114,23 +114,40 @@
   </header>
 
   <!-- 主体内容 -->
-  <main>
-    <h2>可下载文件</h2>
-    <ul class="download-list">
-      <li>
-        <span>示例文件1.zip</span>
-        <a href="files/file1.zip" class="download-btn" download>下载</a>
-      </li>
-      <li>
-        <span>示例文件2.pdf</span>
-        <a href="files/file2.pdf" class="download-btn" download>下载</a>
-      </li>
-      <li>
-        <span>示例文件3.mp4</span>
-        <a href="files/file3.mp4" class="download-btn" download>下载</a>
-      </li>
-    </ul>
-  </main>
+<main>
+  <h2>可下载文件</h2>
+  <ul class="download-list" id="downloadList">
+    <!-- 下载列表由JS动态生成 -->
+  </ul>
+</main>
+
+<script>
+  // 获取文件列表JSON并生成下载列表
+  fetch('files/files.json')
+    .then(response => response.json())
+    .then(files => {
+      const ul = document.getElementById('downloadList');
+      files.forEach(file => {
+        const li = document.createElement('li');
+
+        const span = document.createElement('span');
+        span.textContent = file.name;
+
+        const a = document.createElement('a');
+        a.href = file.path;
+        a.className = 'download-btn';
+        a.setAttribute('download', '');
+        a.textContent = '下载';
+
+        li.appendChild(span);
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+    })
+    .catch(err => {
+      console.error('加载文件列表失败:', err);
+    });
+</script>
 
   <!-- 底部信息 -->
   <footer>
