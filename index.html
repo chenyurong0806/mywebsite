@@ -136,9 +136,9 @@ async function loadFiles() {
       <div class="file-name">📄 ${file.name}</div>
 
       <div class="actions">
-        <a href="${API}/api/download/${file.name}">
+      <a href="${API}/api/download/${encodeURIComponent(file.name)}">
         下载
-        </a>
+      </a>
 
         <button class="delete" onclick="deleteFile('${file.name}')">
           Delete
