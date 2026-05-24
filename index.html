@@ -13,6 +13,7 @@ body {
   color: #24292f;
 }
 
+/* 顶部栏 */
 .header {
   background: #24292f;
   color: white;
@@ -21,6 +22,7 @@ body {
   font-weight: bold;
 }
 
+/* 主容器 */
 .container {
   max-width: 900px;
   margin: 30px auto;
@@ -29,6 +31,7 @@ body {
   border-radius: 8px;
 }
 
+/* 工具栏 */
 .toolbar {
   padding: 12px;
   border-bottom: 1px solid #d0d7de;
@@ -54,6 +57,11 @@ button.delete {
   background: #cf222e;
 }
 
+button.download {
+  background: #0969da;
+}
+
+/* 文件列表 */
 .file-list {
   list-style: none;
   margin: 0;
@@ -80,12 +88,6 @@ button.delete {
   display: flex;
   gap: 8px;
 }
-
-a {
-  text-decoration: none;
-  color: #0969da;
-  font-weight: bold;
-}
 </style>
 </head>
 
@@ -97,19 +99,21 @@ a {
 
 <div class="container">
 
+  <!-- 上传区域 -->
   <div class="toolbar">
     <input type="file" id="fileInput">
     <button onclick="uploadFile()">Upload</button>
     <button onclick="loadFiles()">Refresh</button>
   </div>
 
+  <!-- 文件列表 -->
   <ul id="fileList" class="file-list"></ul>
 
 </div>
 
 <script>
 
-// ===== API 地址 =====
+// ===== 改成你的 Worker 地址 =====
 const API = "https://api.chenyurong.qzz.io"
 
 // =========================
@@ -125,8 +129,6 @@ async function loadFiles() {
 
   data.forEach(file => {
 
-    const path = encodeURIComponent(file.path || file.name)
-
     const li = document.createElement("li")
     li.className = "file-item"
 
@@ -134,15 +136,13 @@ async function loadFiles() {
       <div class="file-name">📄 ${file.name}</div>
 
       <div class="actions">
-
-        <a href="${API}/api/download/${path}">
-          下载
+        <a href="${file.download_url}" target="_blank">
+          <button class="download">Download</button>
         </a>
 
-        <button class="delete" onclick="deleteFile('${path}')">
+        <button class="delete" onclick="deleteFile('${file.name}')">
           Delete
         </button>
-
       </div>
     `
 
@@ -170,26 +170,30 @@ async function uploadFile() {
     body: formData
   })
 
-  alert(await res.text())
+  const text = await res.text()
+  alert(text)
+
   loadFiles()
 }
 
 // =========================
 // 删除文件
 // =========================
-async function deleteFile(path) {
+async function deleteFile(name) {
 
-  if (!confirm("确认删除该文件？")) return
+  if (!confirm(`确认删除 ${name} ?`)) return
 
-  const res = await fetch(`${API}/api/delete/${path}`, {
+  const res = await fetch(`${API}/api/delete/${name}`, {
     method: "DELETE"
   })
 
-  alert(await res.text())
+  const text = await res.text()
+  alert(text)
+
   loadFiles()
 }
 
-// 初始化
+// 初始化加载
 loadFiles()
 
 </script>
