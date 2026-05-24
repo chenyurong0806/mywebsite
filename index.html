@@ -2,28 +2,17 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>GitHub Releases 网盘</title>
+<title>私有网盘</title>
 
 <style>
-body{
-  font-family:Arial;
-  max-width:900px;
-  margin:auto;
-  padding:20px;
-}
-
-.file{
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  border-bottom:1px solid #ddd;
-}
+body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
+.file { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #ddd; }
 </style>
 </head>
 
 <body>
 
-<h2>我的私有网盘</h2>
+<h2>📁 我的私有网盘</h2>
 
 <input type="file" id="fileInput">
 <button onclick="upload()">上传</button>
@@ -50,21 +39,12 @@ async function loadFiles() {
     div.className = "file"
 
     div.innerHTML = `
+      <div>📄 ${file.name}</div>
       <div>
-        📄 ${file.name}
-        (${(file.size / 1024 / 1024).toFixed(2)} MB)
-      </div>
-
-      <div>
-
         <a href="${API}/api/download/${file.id}">
           <button>下载</button>
         </a>
-
-        <button onclick="del('${file.id}')">
-          删除
-        </button>
-
+        <button onclick="del('${file.id}')">删除</button>
       </div>
     `
 
@@ -74,20 +54,19 @@ async function loadFiles() {
 
 async function upload() {
 
-  const file =
-    document.getElementById("fileInput").files[0]
-
+  const file = document.getElementById("fileInput").files[0]
   if (!file) return
 
   const fd = new FormData()
   fd.append("file", file)
 
-  await fetch(`${API}/api/upload`, {
+  const res = await fetch(`${API}/api/upload`, {
     method: "POST",
     body: fd
   })
 
-  alert("上传成功")
+  const data = await res.json()
+  alert("上传成功：" + data.name)
 
   loadFiles()
 }
