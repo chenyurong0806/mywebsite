@@ -52,23 +52,57 @@ async function loadFiles() {
   })
 }
 
-async function upload() {
+<script>
+
+const API = "https://api.chenyurong.qzz.io"
+
+// =========================
+// 上传（带进度条）
+// =========================
+function upload() {
 
   const file = document.getElementById("fileInput").files[0]
-  if (!file) return
+  if (!file) return alert("请选择文件")
 
   const fd = new FormData()
   fd.append("file", file)
 
-  const res = await fetch(`${API}/api/upload`, {
-    method: "POST",
-    body: fd
-  })
+  const xhr = new XMLHttpRequest()
 
-  const data = await res.json()
-  alert("上传成功：" + data.name)
+  xhr.open("POST", `${API}/api/upload`)
 
-  loadFiles()
+  // =========================
+  // 上传进度
+  // =========================
+  xhr.upload.onprogress = function (event) {
+    if (event.lengthComputable) {
+      const percent = Math.round((event.loaded / event.total) * 100)
+      console.log("上传进度:", percent + "%")
+
+      // 👉 如果你想显示到页面（可选）
+      document.getElementById("progress").innerText =
+        "上传进度：" + percent + "%"
+    }
+  }
+
+  // =========================
+  // 完成
+  // =========================
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      alert("上传成功")
+      loadFiles()
+      document.getElementById("progress").innerText = ""
+    } else {
+      alert("上传失败：" + xhr.responseText)
+    }
+  }
+
+  xhr.onerror = function () {
+    alert("网络错误")
+  }
+
+  xhr.send(fd)
 }
 
 async function del(id) {
