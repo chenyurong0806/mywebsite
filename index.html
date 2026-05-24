@@ -2,112 +2,268 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>私有网盘</title>
 
 <style>
-body { font-family: Arial; max-width: 900px; margin: auto; padding: 20px; }
-.file { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #ddd; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial;
+  background: #f6f8fa;
+  color: #24292f;
+}
+
+/* 顶栏 */
+.header {
+  background: #24292f;
+  color: white;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 主容器 */
+.container {
+  max-width: 1000px;
+  margin: 20px auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+/* 卡片 */
+.card {
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+/* 上传区 */
+.upload-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 按钮 */
+button {
+  background: #2da44e;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button.delete {
+  background: #cf222e;
+}
+
+button.download {
+  background: #0969da;
+}
+
+/* 进度条 */
+.progress {
+  width: 100%;
+  height: 8px;
+  background: #eaeef2;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #2da44e;
+  transition: width 0.2s;
+}
+
+/* 状态日志 */
+.log {
+  font-size: 13px;
+  background: #0d1117;
+  color: #c9d1d9;
+  padding: 10px;
+  border-radius: 8px;
+  height: 160px;
+  overflow-y: auto;
+  font-family: monospace;
+}
+
+/* 文件列表 */
+.file {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eaeef2;
+}
+
+.file:hover {
+  background: #f6f8fa;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>📁 我的私有网盘</h2>
+<div class="header">📦 私有网盘（GitHub Releases）</div>
 
-<input type="file" id="fileInput">
-<button onclick="upload()">上传</button>
+<div class="container">
 
-<hr>
+  <!-- 上传卡片 -->
+  <div class="card">
 
-<div id="list"></div>
+    <div class="upload-box">
+      <input type="file" id="fileInput">
+      <button onclick="upload()">上传文件</button>
+      <button onclick="loadFiles()">刷新列表</button>
+    </div>
 
-<div id="progress" style="margin-top:10px;color:#2da44e;"></div>
-  
+    <!-- 进度条 -->
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+  </div>
+
+  <!-- 状态日志 -->
+  <div class="card">
+    <b>📡 上传日志</b>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- 文件列表 -->
+  <div class="card">
+    <b>📁 文件列表</b>
+    <div id="fileList"></div>
+  </div>
+
+</div>
+
 <script>
 
 const API = "https://api.chenyurong.qzz.io"
 
+// =========================
+// 日志
+// =========================
+function log(msg) {
+  const box = document.getElementById("log")
+  box.innerHTML += msg + "\n"
+  box.scrollTop = box.scrollHeight
+}
+
+// =========================
+// 进度条
+// =========================
+function setProgress(v) {
+  document.getElementById("progressBar").style.width = v + "%"
+}
+
+// =========================
+// 文件列表
+// =========================
 async function loadFiles() {
+
+  log("📥 加载文件列表...")
 
   const res = await fetch(`${API}/api/files`)
   const files = await res.json()
 
-  const list = document.getElementById("list")
-  list.innerHTML = ""
+  const box = document.getElementById("fileList")
+  box.innerHTML = ""
 
-  files.forEach(file => {
+  files.forEach(f => {
 
     const div = document.createElement("div")
     div.className = "file"
 
     div.innerHTML = `
-      <div>📄 ${file.name}</div>
-      <div>
-        <a href="${API}/api/download/${file.id}">
-          <button>下载</button>
+      <div>📄 ${f.name}</div>
+
+      <div class="actions">
+        <a href="${API}/api/download/${f.id}">
+          <button class="download">下载</button>
         </a>
-        <button onclick="del('${file.id}')">删除</button>
+        <button class="delete" onclick="del('${f.id}')">删除</button>
       </div>
     `
 
-    list.appendChild(div)
+    box.appendChild(div)
   })
+
+  log("✅ 文件列表更新完成")
 }
-
-<script>
-
-const API = "https://api.chenyurong.qzz.io"
 
 // =========================
 // 上传（带进度条）
 // =========================
-function upload() {
+async function upload() {
 
   const file = document.getElementById("fileInput").files[0]
-  if (!file) return alert("请选择文件")
+  if (!file) {
+    log("❌ 未选择文件")
+    return
+  }
 
-  const fd = new FormData()
-  fd.append("file", file)
+  log("🚀 开始上传：" + file.name)
+
+  const formData = new FormData()
+  formData.append("file", file)
 
   const xhr = new XMLHttpRequest()
-
   xhr.open("POST", `${API}/api/upload`)
 
-  // =========================
   // 上传进度
-  // =========================
-  xhr.upload.onprogress = function (event) {
-    if (event.lengthComputable) {
-      const percent = Math.round((event.loaded / event.total) * 100)
-      console.log("上传进度:", percent + "%")
-
-      // 👉 如果你想显示到页面（可选）
-      document.getElementById("progress").innerText =
-        "上传进度：" + percent + "%"
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const percent = Math.round((e.loaded / e.total) * 100)
+      setProgress(percent)
+      log("⬆️ 上传中：" + percent + "%")
     }
   }
 
-  // =========================
-  // 完成
-  // =========================
-  xhr.onload = function () {
-    if (xhr.status === 200) {
-      alert("上传成功")
-      loadFiles()
-      document.getElementById("progress").innerText = ""
-    } else {
-      alert("上传失败：" + xhr.responseText)
+  xhr.onload = () => {
+    setProgress(100)
+    log("✅ 上传完成")
+
+    try {
+      const res = JSON.parse(xhr.responseText)
+      log("📦 返回：" + JSON.stringify(res))
+    } catch (e) {
+      log("⚠️ 响应解析失败")
     }
+
+    loadFiles()
   }
 
-  xhr.onerror = function () {
-    alert("网络错误")
+  xhr.onerror = () => {
+    log("❌ 上传失败")
   }
 
-  xhr.send(fd)
+  xhr.send(formData)
 }
 
+// =========================
+// 删除
+// =========================
 async function del(id) {
+
+  log("🗑 删除文件：" + id)
 
   await fetch(`${API}/api/delete/${id}`, {
     method: "DELETE"
@@ -116,6 +272,7 @@ async function del(id) {
   loadFiles()
 }
 
+// 初始化
 loadFiles()
 
 </script>
