@@ -27,7 +27,6 @@ body {
   max-width: 1000px;
   margin: 20px auto;
   display: grid;
-  grid-template-columns: 1fr;
   gap: 16px;
 }
 
@@ -86,18 +85,6 @@ button.download {
   transition: width 0.2s;
 }
 
-/* 状态日志 */
-.log {
-  font-size: 13px;
-  background: #0d1117;
-  color: #c9d1d9;
-  padding: 10px;
-  border-radius: 8px;
-  height: 160px;
-  overflow-y: auto;
-  font-family: monospace;
-}
-
 /* 文件列表 */
 .file {
   display: flex;
@@ -115,6 +102,26 @@ button.download {
   display: flex;
   gap: 8px;
 }
+
+/* =========================
+   日志（重点修改）
+   ========================= */
+.log {
+  font-size: 13px;
+  font-family: monospace;
+  color: #57606a;
+  white-space: pre-wrap;      /* ✔ 自动换行 */
+  word-break: break-word;     /* ✔ 防止超宽 */
+  line-height: 1.4;
+}
+
+/* 当前状态行（只更新这一行） */
+.status-line {
+  font-family: monospace;
+  font-size: 13px;
+  color: #24292f;
+  margin-bottom: 8px;
+}
 </style>
 </head>
 
@@ -124,32 +131,34 @@ button.download {
 
 <div class="container">
 
-  <!-- 上传卡片 -->
+  <!-- 上传 -->
   <div class="card">
 
     <div class="upload-box">
       <input type="file" id="fileInput">
       <button onclick="upload()">上传文件</button>
-      <button onclick="loadFiles()">刷新列表</button>
+      <button onclick="loadFiles()">刷新</button>
     </div>
 
-    <!-- 进度条 -->
     <div class="progress">
       <div class="progress-bar" id="progressBar"></div>
     </div>
 
-  </div>
+    <!-- ✔ 当前状态（重点：不刷屏，只更新这里） -->
+    <div class="status-line" id="status">状态：等待操作</div>
 
-  <!-- 状态日志 -->
-  <div class="card">
-    <b>📡 上传日志</b>
-    <div class="log" id="log"></div>
   </div>
 
   <!-- 文件列表 -->
   <div class="card">
     <b>📁 文件列表</b>
     <div id="fileList"></div>
+  </div>
+
+  <!-- ✔ 日志区（移到最底部 + 无背景） -->
+  <div class="card">
+    <b>📡 日志</b>
+    <div class="log" id="log"></div>
   </div>
 
 </div>
@@ -159,12 +168,19 @@ button.download {
 const API = "https://api.chenyurong.qzz.io"
 
 // =========================
-// 日志
+// 日志（只追加，不刷屏）
 // =========================
 function log(msg) {
   const box = document.getElementById("log")
-  box.innerHTML += msg + "\n"
+  box.textContent += msg + "\n"
   box.scrollTop = box.scrollHeight
+}
+
+// =========================
+// 状态行（只更新一行）
+// =========================
+function setStatus(msg) {
+  document.getElementById("status").textContent = "状态：" + msg
 }
 
 // =========================
@@ -179,7 +195,8 @@ function setProgress(v) {
 // =========================
 async function loadFiles() {
 
-  log("📥 加载文件列表...")
+  setStatus("正在加载文件列表...")
+  log("📥 请求文件列表")
 
   const res = await fetch(`${API}/api/files`)
   const files = await res.json()
@@ -194,7 +211,6 @@ async function loadFiles() {
 
     div.innerHTML = `
       <div>📄 ${f.name}</div>
-
       <div class="actions">
         <a href="${API}/api/download/${f.id}">
           <button class="download">下载</button>
@@ -206,21 +222,24 @@ async function loadFiles() {
     box.appendChild(div)
   })
 
-  log("✅ 文件列表更新完成")
+  setStatus("文件列表已更新")
+  log("✅ 文件加载完成")
 }
 
 // =========================
-// 上传（带进度条）
+// 上传（重点优化：进度不刷屏）
 // =========================
 async function upload() {
 
   const file = document.getElementById("fileInput").files[0]
+
   if (!file) {
-    log("❌ 未选择文件")
+    setStatus("未选择文件")
     return
   }
 
-  log("🚀 开始上传：" + file.name)
+  setStatus("开始上传：" + file.name)
+  log("🚀 上传：" + file.name)
 
   const formData = new FormData()
   formData.append("file", file)
@@ -228,30 +247,28 @@ async function upload() {
   const xhr = new XMLHttpRequest()
   xhr.open("POST", `${API}/api/upload`)
 
-  // 上传进度
   xhr.upload.onprogress = (e) => {
     if (e.lengthComputable) {
       const percent = Math.round((e.loaded / e.total) * 100)
+
       setProgress(percent)
-      log("⬆️ 上传中：" + percent + "%")
+
+      // ✔ 关键：不再追加日志，只更新状态行
+      setStatus(`上传中 ${percent}%`)
     }
   }
 
   xhr.onload = () => {
     setProgress(100)
-    log("✅ 上传完成")
 
-    try {
-      const res = JSON.parse(xhr.responseText)
-      log("📦 返回：" + JSON.stringify(res))
-    } catch (e) {
-      log("⚠️ 响应解析失败")
-    }
+    setStatus("上传完成")
+    log("✅ 上传成功")
 
     loadFiles()
   }
 
   xhr.onerror = () => {
+    setStatus("上传失败")
     log("❌ 上传失败")
   }
 
@@ -263,7 +280,8 @@ async function upload() {
 // =========================
 async function del(id) {
 
-  log("🗑 删除文件：" + id)
+  setStatus("删除文件 " + id)
+  log("🗑 删除：" + id)
 
   await fetch(`${API}/api/delete/${id}`, {
     method: "DELETE"
