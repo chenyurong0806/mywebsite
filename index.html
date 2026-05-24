@@ -13,11 +13,11 @@ body {
   color: #24292f;
 }
 
+/* 顶栏 */
 .header {
   background: #24292f;
   color: white;
   padding: 14px 20px;
-  font-size: 16px;
   font-weight: 600;
 }
 
@@ -37,80 +37,48 @@ body {
   padding: 16px;
 }
 
-/* 上传区 */
-.upload-box {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-/* 隐藏原生 input */
-input[type="file"] {
-  display: none;
-}
-
-/* GitHub风格按钮 */
+/* =========================
+   GitHub统一按钮系统
+   ========================= */
 .btn {
-  border: 1px solid #d0d7de;
-  background: #f6f8fa;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
   padding: 6px 12px;
   border-radius: 6px;
+
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+
   cursor: pointer;
+  font-size: 13px;
   font-weight: 500;
+  text-decoration: none;
 }
 
 .btn:hover {
   background: #eef1f4;
 }
 
+/* 仅用语义，不再乱配色 */
+.btn-danger {
+  color: #cf222e;
+}
+
+.btn-danger:hover {
+  background: #fff1f2;
+  border-color: #ffccd1;
+}
+
 .btn-primary {
-  background: #2da44e;
-  color: white;
-  border: none;
+  color: #1a7f37;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
-}
-
-.btn-danger {
-  background: #cf222e;
-  color: white;
-  border: none;
-}
-
-.btn-blue {
-  background: #0969da;
-  color: white;
-  border: none;
-}
-
-/* 进度条区域（增加间距） */
-.progress-wrap {
-  margin-top: 12px;
-}
-
-.progress {
-  width: 100%;
-  height: 8px;
-  background: #eaeef2;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  width: 0%;
-  background: #2da44e;
-  transition: width 0.2s;
-}
-
-/* 状态（与进度分离） */
-.status-line {
-  margin-top: 12px;
-  font-family: monospace;
-  font-size: 13px;
-  color: #24292f;
+  background: #dafbe1;
+  border-color: #a3e4b0;
 }
 
 /* 文件列表 */
@@ -118,6 +86,7 @@ input[type="file"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   padding: 10px;
   border-bottom: 1px solid #eaeef2;
 }
@@ -131,29 +100,57 @@ input[type="file"] {
   gap: 8px;
 }
 
-/* 日志（无背景 + 可换行） */
-.log {
-  font-size: 13px;
-  font-family: monospace;
-  color: #57606a;
-  white-space: pre-wrap;
-  word-break: break-word;
-  line-height: 1.4;
+/* 上传区 */
+.upload-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
-/* 日志头部 */
-.log-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
+/* 隐藏原生 input */
+input[type="file"] {
+  display: none;
+}
+
+/* 进度条 */
+.progress {
+  margin-top: 12px;
+  height: 8px;
+  background: #eaeef2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #2da44e;
+  transition: width 0.2s;
+}
+
+/* 状态 */
+.status {
+  margin-top: 10px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #57606a;
+}
+
+/* 日志 */
+.log {
+  font-family: monospace;
+  font-size: 13px;
+  color: #57606a;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">个人网盘</div>
+<div class="header">📦 私有网盘（GitHub Releases）</div>
 
 <div class="container">
 
@@ -162,24 +159,19 @@ input[type="file"] {
 
     <div class="upload-box">
 
-      <!-- ✔ 自定义按钮 -->
       <label for="fileInput" class="btn">📂 选择文件</label>
       <input type="file" id="fileInput">
 
-      <button class="btn-primary" onclick="upload()">上传</button>
+      <button class="btn btn-primary" onclick="upload()">上传</button>
       <button class="btn" onclick="loadFiles()">刷新</button>
 
     </div>
 
-    <!-- ✔ 进度 -->
-    <div class="progress-wrap">
-      <div class="progress">
-        <div class="progress-bar" id="progressBar"></div>
-      </div>
-
-      <!-- ✔ 状态与进度分离 -->
-      <div class="status-line" id="status">状态：等待操作</div>
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
     </div>
+
+    <div class="status" id="status">状态：等待操作</div>
 
   </div>
 
@@ -191,12 +183,7 @@ input[type="file"] {
 
   <!-- 日志 -->
   <div class="card">
-
-    <div class="log-header">
-      <b>📡 日志</b>
-      <button class="btn" onclick="clearLog()">清空日志</button>
-    </div>
-
+    <b>📡 日志</b>
     <div class="log" id="log"></div>
   </div>
 
@@ -213,10 +200,6 @@ function log(msg) {
   const box = document.getElementById("log")
   box.textContent += msg + "\n"
   box.scrollTop = box.scrollHeight
-}
-
-function clearLog() {
-  document.getElementById("log").textContent = ""
 }
 
 // =========================
@@ -238,8 +221,6 @@ function setProgress(v) {
 // =========================
 async function loadFiles() {
 
-  setStatus("加载文件列表...")
-
   const res = await fetch(`${API}/api/files`)
   const files = await res.json()
 
@@ -248,41 +229,44 @@ async function loadFiles() {
 
   files.forEach(f => {
 
+    const name = decodeURIComponent(f.name)
+
     const div = document.createElement("div")
     div.className = "file"
 
     div.innerHTML = `
-      <div>📄 ${f.name}</div>
+      <div>📄 ${name}</div>
+
       <div class="actions">
-        <a href="${API}/api/download/${f.id}">
-          <button class="btn-blue">下载</button>
+        <a class="btn" href="${API}/api/download/${f.id}">
+          ⬇ 下载
         </a>
-        <button class="btn-danger" onclick="del('${f.id}')">删除</button>
+
+        <button class="btn btn-danger" onclick="del('${f.id}')">
+          🗑 删除
+        </button>
       </div>
     `
 
     box.appendChild(div)
   })
-
-  setStatus("文件列表已更新")
 }
 
 // =========================
-// 上传
+// 上传（中文修复）
 // =========================
 async function upload() {
 
   const file = document.getElementById("fileInput").files[0]
-  if (!file) {
-    setStatus("未选择文件")
-    return
-  }
+  if (!file) return
 
-  setStatus("开始上传：" + file.name)
-  log("↑ 上传：" + file.name)
+  setStatus("上传：" + file.name)
+  log("🚀 上传：" + file.name)
 
   const fd = new FormData()
-  fd.append("file", file)
+
+  // 🔥 中文关键修复：不需要手动 encodeURIComponent
+  fd.append("file", file, file.name)
 
   const xhr = new XMLHttpRequest()
   xhr.open("POST", `${API}/api/upload`)
@@ -291,20 +275,20 @@ async function upload() {
     if (e.lengthComputable) {
       const p = Math.round((e.loaded / e.total) * 100)
       setProgress(p)
-      setStatus(`上传中 ${p}%`)
+      setStatus("上传中 " + p + "%")
     }
   }
 
   xhr.onload = () => {
     setProgress(100)
     setStatus("上传完成")
-    log("(●'◡'●)上传成功")
+    log("✅ 上传成功")
     loadFiles()
   }
 
   xhr.onerror = () => {
     setStatus("上传失败")
-    log("/(ㄒoㄒ)/~上传失败")
+    log("❌ 上传失败")
   }
 
   xhr.send(fd)
@@ -314,8 +298,9 @@ async function upload() {
 // 删除
 // =========================
 async function del(id) {
-  setStatus("删除文件")
-  log("✕ 删除：" + id)
+
+  setStatus("删除中...")
+  log("🗑 删除：" + id)
 
   await fetch(`${API}/api/delete/${id}`, {
     method: "DELETE"
