@@ -1,82 +1,250 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>Drive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>个人网盘</title>
 
 <style>
-body{
-  margin:0;
-  font-family:Arial;
-  background:#f8f9fa;
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial;
+  background: #f6f8fa;
+  color: #24292f;
 }
 
-.top{
-  background:#1a73e8;
-  color:white;
-  padding:12px;
-  font-weight:bold;
+/* 顶栏 */
+.header {
+  background: #24292f;
+  color: white;
+  padding: 14px 20px;
+  font-weight: 600;
 }
 
-.container{
-  max-width:900px;
-  margin:auto;
-  padding:20px;
+/* 容器 */
+.container {
+  max-width: 1000px;
+  margin: 20px auto;
+  display: grid;
+  gap: 16px;
 }
 
-.card{
-  background:white;
-  padding:12px;
-  border-radius:8px;
-  margin-bottom:12px;
+/* 卡片 */
+.card {
+  background: white;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 16px;
 }
 
-.file{
-  display:flex;
-  justify-content:space-between;
-  padding:10px;
-  border-bottom:1px solid #eee;
+/* =========================
+   GitHub统一按钮系统
+   ========================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 12px;
+  border-radius: 6px;
+
+  border: 1px solid #d0d7de;
+  background: #f6f8fa;
+  color: #24292f;
+
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: #eef1f4;
+}
+
+/* 仅用语义，不再乱配色 */
+.btn-danger {
+  color: #cf222e;
+}
+
+.btn-danger:hover {
+  background: #fff1f2;
+  border-color: #ffccd1;
+}
+
+.btn-primary {
+  color: #1a7f37;
+}
+
+.btn-primary:hover {
+  background: #dafbe1;
+  border-color: #a3e4b0;
+}
+
+/* 文件列表 */
+.file {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px;
+  border-bottom: 1px solid #eaeef2;
+}
+
+.file:hover {
+  background: #f6f8fa;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 上传区 */
+.upload-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 隐藏原生 input */
+input[type="file"] {
+  display: none;
+}
+
+/* 进度条 */
+.progress {
+  margin-top: 12px;
+  height: 8px;
+  background: #eaeef2;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: #2da44e;
+  transition: width 0.2s;
+}
+
+/* 状态 */
+.status {
+  margin-top: 10px;
+  font-family: monospace;
+  font-size: 13px;
+  color: #57606a;
+}
+
+/* 日志 */
+.log {
+  font-family: monospace;
+  font-size: 13px;
+  color: #57606a;
+
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>
 </head>
 
 <body>
 
-<div class="top">My Drive</div>
+<div class="header">个人网盘（GitHub Releases）</div>
 
 <div class="container">
 
+  <!-- 上传 -->
   <div class="card">
-    <input type="file" id="f">
-    <button onclick="upload()">Upload</button>
+
+    <div class="upload-box">
+
+      <label for="fileInput" class="btn">选择文件</label>
+      <input type="file" id="fileInput">
+
+      <button class="btn btn-primary" onclick="upload()">上传</button>
+      <button class="btn" onclick="loadFiles()">刷新</button>
+
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="status" id="status">状态：等待操作</div>
+
   </div>
 
-  <div class="card" id="list"></div>
+  <!-- 文件列表 -->
+  <div class="card">
+    <b>📁 文件列表</b>
+    <div id="fileList"></div>
+  </div>
+
+  <!-- 日志 -->
+  <div class="card">
+    <b>📡 日志</b>
+    <div class="log" id="log"></div>
+  </div>
 
 </div>
 
 <script>
 
-const API="https://api.chenyurong.qzz.io"
+const API = "https://api.chenyurong.qzz.io"
 
-async function load(){
+// =========================
+// 日志
+// =========================
+function log(msg) {
+  const box = document.getElementById("log")
+  box.textContent += msg + "\n"
+  box.scrollTop = box.scrollHeight
+}
 
-  let r=await fetch(API+"/api/files")
-  let d=await r.json()
+// =========================
+// 状态
+// =========================
+function setStatus(msg) {
+  document.getElementById("status").textContent = "状态：" + msg
+}
 
-  let box=document.getElementById("list")
-  box.innerHTML=""
+// =========================
+// 进度
+// =========================
+function setProgress(v) {
+  document.getElementById("progressBar").style.width = v + "%"
+}
 
-  d.forEach(f=>{
+// =========================
+// 文件列表
+// =========================
+async function loadFiles() {
 
-    let div=document.createElement("div")
-    div.className="file"
+  const res = await fetch(`${API}/api/files`)
+  const files = await res.json()
 
-    div.innerHTML=`
-      <div>${f.name}</div>
-      <div>
-        <a href="${API}/api/download/${f.id}">下载</a>
-        <button onclick="del('${f.id}')">删除</button>
+  const box = document.getElementById("fileList")
+  box.innerHTML = ""
+
+  files.forEach(f => {
+
+    const name = decodeURIComponent(f.name)
+
+    const div = document.createElement("div")
+    div.className = "file"
+
+    div.innerHTML = `
+      <div>📄 ${name}</div>
+
+      <div class="actions">
+        <a class="btn" href="${API}/api/download/${f.id}">
+          下载
+        </a>
+
+        <button class="btn btn-danger" onclick="del('${f.id}')">
+          删除
+        </button>
       </div>
     `
 
@@ -84,24 +252,65 @@ async function load(){
   })
 }
 
-async function upload(){
+// =========================
+// 上传（中文修复）
+// =========================
+async function upload() {
 
-  let file=document.getElementById("f").files[0]
-  let fd=new FormData()
-  fd.append("file",file)
+  const file = document.getElementById("fileInput").files[0]
+  if (!file) return
 
-  await fetch(API+"/api/upload",{method:"POST",body:fd})
+  setStatus("上传：" + file.name)
+  log("↑ 上传：" + file.name)
 
-  load()
+  const fd = new FormData()
+
+  // 🔥 中文关键修复：不需要手动 encodeURIComponent
+  fd.append("file", file, file.name)
+
+  const xhr = new XMLHttpRequest()
+  xhr.open("POST", `${API}/api/upload`)
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const p = Math.round((e.loaded / e.total) * 100)
+      setProgress(p)
+      setStatus("上传中 " + p + "%")
+    }
+  }
+
+  xhr.onload = () => {
+    setProgress(100)
+    setStatus("上传完成")
+    log("(●'◡'●)上传成功")
+    loadFiles()
+  }
+
+  xhr.onerror = () => {
+    setStatus("上传失败")
+    log("/(ㄒoㄒ)/~上传失败")
+  }
+
+  xhr.send(fd)
 }
 
-async function del(id){
+// =========================
+// 删除
+// =========================
+async function del(id) {
 
-  await fetch(API+"/api/delete/"+id,{method:"DELETE"})
-  load()
+  setStatus("删除中...")
+  log("✕ 删除：" + id)
+
+  await fetch(`${API}/api/delete/${id}`, {
+    method: "DELETE"
+  })
+
+  loadFiles()
 }
 
-load()
+// 初始化
+loadFiles()
 
 </script>
 
