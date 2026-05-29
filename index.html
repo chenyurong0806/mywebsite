@@ -29,7 +29,7 @@ body {
   gap: 16px;
 }
 
-/* 卡卡片 */
+/* 卡片 */
 .card {
   background: white;
   border: 1px solid #d0d7de;
@@ -44,14 +44,11 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-
   padding: 6px 12px;
   border-radius: 6px;
-
   border: 1px solid #d0d7de;
   background: #f6f8fa;
   color: #24292f;
-
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -95,7 +92,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-
   padding: 10px;
   border-bottom: 1px solid #eaeef2;
 }
@@ -150,7 +146,6 @@ input[type="file"] {
   font-family: monospace;
   font-size: 13px;
   color: #57606a;
-
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -197,38 +192,28 @@ input[type="file"] {
 
 <script>
 
+// ⚠️ 请记得将此处的域名修改为你自己 Worker 的真实域名
 const API = "https://api.chenyurong.qzz.io"
 
-// 全局状态管理
-let allFiles = [];    // 缓存从后端获取的所有原始文件数据
-let currentPath = ""; // 当前所在的虚拟路径，例如 "" 或 "documents/" 或 "documents/photos/"
+// 全局状态
+let allFiles = [];    
+let currentPath = ""; // 始终以空字符串或 "folder/" "dir1/dir2/" 形式存在
 
-// =========================
-// 日志
-// =========================
 function log(msg) {
   const box = document.getElementById("log")
   box.textContent += msg + "\n"
   box.scrollTop = box.scrollHeight
 }
 
-// =========================
-// 状态
-// =========================
 function setStatus(msg) {
   document.getElementById("status").textContent = "状态：" + msg
 }
 
-// =========================
-// 进度
-// =========================
 function setProgress(v) {
   document.getElementById("progressBar").style.width = v + "%"
 }
 
-// =========================
-// 加载文件列表（核心数据拉取）
-// =========================
+// 加载原始文件列表
 async function loadFiles() {
   setStatus("正在获取文件列表...");
   try {
@@ -242,11 +227,10 @@ async function loadFiles() {
   }
 }
 
-// =========================
-// 渲染文件列表（纯前端虚拟目录解析）
-// =========================
+// ==========================================
+// 核心修复：强力虚拟目录解析器
+// ==========================================
 function renderFiles() {
-  // 1. 更新路径面包屑与返回按钮状态
   document.getElementById("pathDisplay").textContent = `📁 当前目录: /${currentPath}`
   document.getElementById("backBtn").style.display = currentPath === "" ? "none" : "inline-flex"
 
@@ -256,29 +240,32 @@ function renderFiles() {
   const folders = new Set()
   const filesInDir = []
 
-  // 2. 过滤并归类当前目录下的文件与子文件夹
   allFiles.forEach(f => {
-    const name = decodeURIComponent(f.name)
-    
-    // 检查文件是否属于当前路径前缀
+    // 1. 预清洗：全面将可能被二次编码的 %2F 还原为统一的斜杠 /
+    let name = decodeURIComponent(f.name).replace(/%2F/g, "/");
+
+    // 2. 检查该文件是否属于当前所处目录
     if (!name.startsWith(currentPath)) return
 
+    // 3. 截取掉当前目录前缀，拿到相对路径
     const relativePath = name.slice(currentPath.length)
-    // 忽略路径自身或隐藏的空文件夹占位符
-    if (!relativePath || relativePath === ".placeholder") return
+    if (!relativePath) return // 刚好是目录自身，跳过
 
+    // 4. 判定是【子文件夹】还是【当前目录下的直属文件】
     const slashIndex = relativePath.indexOf("/")
     if (slashIndex !== -1) {
-      // 提取一级子文件夹名
+      // 含有斜杠，说明在这个相对路径里还有下一级，提取出子文件夹名
       const folderName = relativePath.slice(0, slashIndex)
-      folders.add(folderName)
+      if (folderName) folders.add(folderName)
     } else {
-      // 属于当前目录的直接文件
-      filesInDir.push(f)
+      // 没有斜杠了，说明是直属文件。如果是占位符则过滤掉不显示
+      if (relativePath !== ".placeholder") {
+        filesInDir.push({ id: f.id, displayName: relativePath })
+      }
     }
   })
 
-  // 3. 渲染子文件夹
+  // 渲染显示：子文件夹
   folders.forEach(folder => {
     const div = document.createElement("div")
     div.className = "file"
@@ -295,15 +282,12 @@ function renderFiles() {
     box.appendChild(div)
   })
 
-  // 4. 渲染直接文件
+  // 渲染显示：直属文件
   filesInDir.forEach(f => {
-    const name = decodeURIComponent(f.name)
-    const displayName = name.slice(currentPath.length) // 仅展示纯文件名
-
     const div = document.createElement("div")
     div.className = "file"
     div.innerHTML = `
-      <div>📄 ${displayName}</div>
+      <div>📄 ${f.displayName}</div>
       <div class="actions">
         <a class="btn" href="${API}/api/download/${f.id}">下载</a>
         <button class="btn btn-danger" onclick="del('${f.id}')">删除</button>
@@ -312,15 +296,11 @@ function renderFiles() {
     box.appendChild(div)
   })
 
-  // 空白提示
   if (folders.size === 0 && filesInDir.length === 0) {
     box.innerHTML = `<div style="color: #57606a; text-align: center; padding: 20px; font-size: 13px;">此文件夹为空</div>`
   }
 }
 
-// =========================
-// 目录导航控制
-// =========================
 function enterFolder(folderName) {
   currentPath += folderName + "/";
   renderFiles();
@@ -334,26 +314,26 @@ function goBack() {
   renderFiles();
 }
 
-// =========================
 // 创建文件夹
-// =========================
 function createFolderPrompt() {
   const folderName = prompt("请输入文件夹名称:")
   if (!folderName) return
   const trimmed = folderName.trim()
   if (!trimmed) return
-  if (trimmed.includes("/")) {
-    alert("文件夹名称不能包含 '/' 字符");
+  if (trimmed.includes("/") || trimmed.includes("\\")) {
+    alert("文件夹名称不能包含斜杠字符");
     return
   }
 
   setStatus("正在创建文件夹：" + trimmed)
   log("📁 创建文件夹：" + trimmed)
 
-  // 核心黑科技：利用 0 字节的 .placeholder 文件在 GitHub 侧维持这个“虚拟目录”
+  // 构造标准规范的虚拟路径： 路径/新文件夹名/.placeholder
+  const targetName = currentPath + trimmed + "/.placeholder";
+
   const fd = new FormData()
   const blob = new Blob([""], { type: "text/plain" })
-  fd.append("file", blob, currentPath + trimmed + "/.placeholder")
+  fd.append("file", blob, targetName)
 
   const xhr = new XMLHttpRequest()
   xhr.open("POST", `${API}/api/upload`)
@@ -362,7 +342,7 @@ function createFolderPrompt() {
     setProgress(100)
     setStatus("文件夹创建成功")
     log("(●'◡'●) 文件夹 [" + trimmed + "] 创建成功")
-    loadFiles()
+    loadFiles() // 重新拉取
   }
 
   xhr.onerror = () => {
@@ -373,9 +353,7 @@ function createFolderPrompt() {
   xhr.send(fd)
 }
 
-// =========================
-// 上传（注入虚拟路径）
-// =========================
+// 上传文件
 async function upload() {
   const file = document.getElementById("fileInput").files[0]
   if (!file) return
@@ -385,7 +363,6 @@ async function upload() {
   log("↑ 上传：" + targetName)
 
   const fd = new FormData()
-  // 通过第三个参数，强行重写文件名为带路径的虚拟全路径
   fd.append("file", file, targetName)
 
   const xhr = new XMLHttpRequest()
@@ -414,45 +391,34 @@ async function upload() {
   xhr.send(fd)
 }
 
-// =========================
-// 删除单文件
-// =========================
 async function del(id) {
   if (!confirm("确定要删除该文件吗？")) return
   setStatus("删除中...")
   log("✕ 删除资产ID：" + id)
 
-  await fetch(`${API}/api/delete/${id}`, {
-    method: "DELETE"
-  })
+  await fetch(`${API}/api/delete/${id}`, { method: "DELETE" })
   loadFiles()
 }
 
-// =========================
-// 删除整个文件夹（级联删除）
-// =========================
+// 删除文件夹及其下的所有内容
 async function deleteFolder(folder) {
-  if (!confirm(`警告：确定要彻底删除文件夹 "${folder}" 及其内部的所有文件吗？此操作不可逆！`)) return
+  if (!confirm(`警告：确定要彻底删除文件夹 "${folder}" 及其内部的所有文件吗？`)) return
 
   const prefix = currentPath + folder + "/"
-  // 揪出所有隶属于该虚拟路径下的 GitHub 资产
   const targets = allFiles.filter(f => {
-    const name = decodeURIComponent(f.name)
+    const name = decodeURIComponent(f.name).replace(/%2F/g, "/");
     return name.startsWith(prefix)
   })
 
-  setStatus(`正在级联删除文件夹，共 ${targets.length} 个对象...`)
+  setStatus(`正在清理文件夹，共 ${targets.length} 个对象...`)
   log(`✕ 开始清空文件夹: ${folder}`)
 
-  // 循环调用后端单个删除
   for (const f of targets) {
-    const name = decodeURIComponent(f.name)
-    log(`✕ 正在擦除: ${name}`)
     await fetch(`${API}/api/delete/${f.id}`, { method: "DELETE" })
   }
 
   setStatus("文件夹删除完毕")
-  log("(●'◡'●) 文件夹及其内部所有实体已清理干净")
+  log("(●'◡'●) 文件夹已清理干净")
   loadFiles()
 }
 
